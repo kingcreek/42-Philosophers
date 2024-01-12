@@ -84,6 +84,7 @@ int	start_init(int argc, char **argv, t_data *data)
 	data->shared_fork = malloc(sizeof(char) * data->num_of_philo);
 	data->fork_mutex = malloc(sizeof(pthread_mutex_t *) * data->num_of_philo);
 	data->time_mutex = malloc (sizeof(pthread_mutex_t));
+	//data->any_dead_mutex = malloc (sizeof(pthread_mutex_t));
 	if (!data->shared_fork || !data->fork_mutex || !data->time_mutex)
 	{
 		clear_data(data);
@@ -99,6 +100,7 @@ int	start_init(int argc, char **argv, t_data *data)
 		i++;
 	}
 	data->any_dead = 0;
-	pthread_mutex_init(&data->any_dead_mutex, NULL);
+	pthread_mutex_init(&(data->any_dead_mutex), NULL);
+	pthread_mutex_init(&(data->print_mutex), NULL);
 	return (0);
 }

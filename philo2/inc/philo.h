@@ -40,38 +40,39 @@ typedef struct s_init_data
 	pthread_mutex_t	*time_mutex;
 	pthread_mutex_t	**fork_mutex;
 	pthread_mutex_t	any_dead_mutex;
+	pthread_mutex_t	print_mutex;
 }t_data;
 
 typedef struct s_philo
 {
 	int				last_eat;
+	int				last_eat_priv;
 	int				id;
 	int				eat_count;
 	int				forks;
 	t_data			*init_data;
+	pthread_mutex_t	last_eat_mutex;
 }t_philo;
 
 /* UTILS */
 int		ft_atoi(const char *str);
 void	msleep(int time);
 int		get_time(t_data *data);
-void	wait_until(t_data *data, t_philo *philo, int time);
+void	wait_until(t_data *data, int time);
 
 /* MESSAGES */
-void	print_philo_msg(t_data *data, int philo_id, int msg_nbr);
+int		print_philo_msg(t_data *data, int philo_id, int msg_nbr);
 void	print_invalid(int msg_nbr);
 
 /* PARSER */
 int		start_init(int argc, char **argv, t_data *data);
 
 /* ACTIONS */
-void	sleeping(t_data *data, t_philo *philo);
+int		sleeping(t_data *data, t_philo *philo);
 void	putdown_fork(t_data *data, t_philo *philo, int l_fork, int r_fork);
-void	eat(t_data *data, t_philo *philo);
+int		eat(t_data *data, t_philo *philo);
 
 /* DIE */
-int		check_any_die(t_data *data);
-int		check_die(t_data *data, t_philo *philo);
 int		check_i_die(t_data *data, t_philo *philo);
 
 /* CLEANER */

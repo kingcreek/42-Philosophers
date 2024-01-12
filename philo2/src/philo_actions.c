@@ -20,17 +20,18 @@
  * @param p the current philo
  * @param pos the position of the fork in the array of forks
  */
-void	check_fork(t_data *data, t_philo *philo, int pos)
+int	check_fork(t_data *data, t_philo *philo, int pos)
 {
 	pthread_mutex_lock(data->fork_mutex[pos]);
 	if (data->shared_fork[pos] == 0)
 	{
 		data->shared_fork[pos] = 1;
 		philo->forks += 1;
-		if (!check_die(data, philo))
-			print_philo_msg(data, philo->id, 0);
+		if (!print_philo_msg(data, philo->id, 0))
+			return (pthread_mutex_unlock(data->fork_mutex[pos]), 0);
 	}
 	pthread_mutex_unlock(data->fork_mutex[pos]);
+	return (1);
 }
 
 /**
@@ -42,7 +43,7 @@ void	check_fork(t_data *data, t_philo *philo, int pos)
  * @param data a pointer to the data structure
  * @param philo the current philosopher
  */
-void	eat(t_data *data, t_philo *philo)
+int	eat(t_data *data, t_philo *philo)
 {
 	int			left_fork;
 	int			right_fork;
@@ -56,18 +57,22 @@ void	eat(t_data *data, t_philo *philo)
 	}
 	while (philo->forks < 2 && !check_i_die(data, philo))
 	{
-		check_fork(data, philo, left_fork);
-		check_fork(data, philo, right_fork);
+		if (!check_fork(data, philo, left_fork))
+			return (0);
+		if (!check_fork(data, philo, right_fork))
+			return (0);
 	}
-	if (!check_die(data, philo))
-	{
-		philo->last_eat = get_time(data);
-		print_philo_msg(data, philo->id, 1);
-		wait_until(data, philo, data->time_to_eat);
-		if (data->must_eat != -1)
-			philo->eat_count++;
-		putdown_fork(data, philo, left_fork, right_fork);
-	}
+	pthread_mutex_lock(&(philo->last_eat_mutex));
+	philo->last_eat = get_time(data);
+	philo->last_eat_priv = philo->last_eat;
+	pthread_mutex_unlock(&(philo->last_eat_mutex));
+	if (!print_philo_msg(data, philo->id, 1))
+		return (0);
+	wait_until(data, data->time_to_eat);
+	if (data->must_eat != -1)
+		philo->eat_count++;
+	putdown_fork(data, philo, left_fork, right_fork);
+	return (1);
 }
 
 /**
@@ -96,8 +101,10 @@ void	putdown_fork(t_data *data, t_philo *philo, int l_fork, int r_fork)
  * 
  * @param philo a pointer to the current philo's struct
  */
-void	sleeping(t_data *data, t_philo *philo)
+int	sleeping(t_data *data, t_philo *philo)
 {
-	print_philo_msg(philo->init_data, philo->id, 2);
-	wait_until(data, philo, data->time_to_sleep);
+	if (!print_philo_msg(philo->init_data, philo->id, 2))
+		return (0);
+	wait_until(data, data->time_to_sleep);
+	return (1);
 }

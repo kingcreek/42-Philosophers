@@ -38,6 +38,8 @@ void	clean(t_philo *philo, t_data *data, pthread_t *philo_arr)
 		i++;
 	}
 	pthread_mutex_destroy(data->time_mutex);
+	pthread_mutex_destroy(&(data->any_dead_mutex));
+	pthread_mutex_destroy(&(data->print_mutex));
 	clear_data(data);
 	free(philo_arr);
 	free(philo);

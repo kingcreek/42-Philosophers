@@ -32,13 +32,16 @@ void	*philo_loop(void *param)
 	data = philo->init_data;
 	if (philo->id % 2 == 0)
 		msleep(15);
-	while (!check_die(data, philo))
+	while (1)
 	{
-		eat(data, philo);
+		if (!eat(data, philo))
+			break ;
 		if (philo->eat_count == data->must_eat)
 			break ;
-		sleeping(data, philo);
-		print_philo_msg(data, philo->id, THINK);
+		if (!sleeping(data, philo))
+			break ;
+		if (!print_philo_msg(data, philo->id, THINK))
+			break ;
 	}
 	return (NULL);
 }
@@ -70,7 +73,9 @@ void	lets_eat(t_data *data, t_philo *philo, pthread_t *philo_arr)
 		philo[i].id = i + 1;
 		philo[i].eat_count = 0;
 		philo[i].last_eat = 0;
+		philo[i].last_eat_priv = 0;
 		philo[i].forks = 0;
+		pthread_mutex_init(&philo[i].last_eat_mutex, NULL);
 		i++;
 	}
 	i = 0;
@@ -102,11 +107,39 @@ int	join_threads(t_data *data, pthread_t *philo_arr, t_philo *philo)
 		if (pthread_join(philo_arr[i], NULL) != 0)
 		{
 			clean(philo, data, philo_arr);
-			printf("Thread join failed at philos\n");
 			return (0);
 		}
 	}
 	return (1);
+}
+
+static void checker_loop(t_data *data, t_philo *philo)
+{
+	int	i;
+	int	time;
+	int	exit;
+
+	exit = 0;
+	while (1)
+	{
+		i = 0;
+		while (i < data->num_of_philo)
+		{
+			pthread_mutex_lock(&philo[i].last_eat_mutex);
+			time = get_time(data);
+			if (time - (philo[i].last_eat) > data->time_to_die)
+			{
+				print_philo_msg(data, philo[i].id, DEAD);
+				exit = 1;
+				pthread_mutex_unlock(&philo[i].last_eat_mutex);
+				break ;
+			}
+			pthread_mutex_unlock(&philo[i].last_eat_mutex);
+			i++;
+		}
+		if (exit)
+			break ;
+	}
 }
 
 int	main(int argc, char **argv)
@@ -133,7 +166,9 @@ int	main(int argc, char **argv)
 		return (1);
 	}
 	lets_eat(data, philo, philo_arr);
-	join_threads(data, philo_arr, philo);
+	checker_loop(data, philo);
+	if (!join_threads(data, philo_arr, philo))
+		return (0);
 	clean(philo, data, philo_arr);
 	return (0);
 }
